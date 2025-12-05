@@ -1,12 +1,15 @@
-// Vercel Serverless Function - OCR Processing
-import Tesseract from 'tesseract.js';
+// Vercel Serverless Function - OCR 처리
+// 경로: /api/ocr-process
 
-export default async function handler(req, res) {
-  // CORS 설정
+const Tesseract = require('tesseract.js');
+
+module.exports = async (req, res) => {
+  // CORS 헤더 설정
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // CORS preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -21,9 +24,11 @@ export default async function handler(req, res) {
     if (!fileUrl) {
       return res.status(400).json({
         success: false,
-        error: 'Missing file URL'
+        error: '파일 URL이 없습니다.'
       });
     }
+
+    console.log('OCR 처리 시작:', fileUrl);
 
     // Tesseract.js로 OCR 처리
     const { data: { text, confidence } } = await Tesseract.recognize(
@@ -33,6 +38,9 @@ export default async function handler(req, res) {
         logger: info => console.log(info)
       }
     );
+
+    console.log('OCR 완료 - 신뢰도:', confidence);
+    console.log('추출된 텍스트:', text);
 
     // 텍스트에서 계좌 정보 추출
     const extractedData = extractBankInfo(text);
@@ -44,7 +52,8 @@ export default async function handler(req, res) {
         fallbackRequired: true,
         confidence: confidence,
         rawText: text,
-        message: 'OCR confidence too low or no account number found'
+        data: extractedData,
+        message: 'OCR 신뢰도가 낮거나 계좌번호를 찾을 수 없습니다.'
       });
     }
 
@@ -56,14 +65,14 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('OCR error:', error);
+    console.error('OCR 처리 오류:', error);
     return res.status(200).json({
       success: false,
       fallbackRequired: true,
-      error: error.message || 'OCR processing failed'
+      error: error.message || 'OCR 처리 중 오류가 발생했습니다.'
     });
   }
-}
+};
 
 // 은행 정보 추출 함수
 function extractBankInfo(text) {
@@ -83,7 +92,13 @@ function extractBankInfo(text) {
     /IBK기업은행/,
     /국민은행/,
     /카카오뱅크/,
-    /토스뱅크/
+    /토스뱅크/,
+    /케이뱅크/,
+    /SC제일은행/,
+    /한국씨티은행/,
+    /부산은행/,
+    /대구은행/,
+    /경남은행/
   ];
 
   for (const pattern of bankPatterns) {
@@ -110,7 +125,9 @@ function extractBankInfo(text) {
     result.accountHolder = nameMatches.find(name => 
       !name.includes('은행') && 
       !name.includes('뱅크') &&
-      !name.includes('지점')
+      !name.includes('지점') &&
+      !name.includes('예금') &&
+      !name.includes('계좌')
     );
   }
 
