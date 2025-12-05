@@ -1,17 +1,9 @@
 {
   "name": "daewoong-backend",
   "version": "1.0.0",
-  "description": "Backend for Daewoong Accounting Portal",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": ["vercel", "serverless", "ocr", "supabase"],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "tesseract.js": "^5.0.4",
-    "formidable": "^3.5.1"
+    "@supabase/supabase-js": "2.39.0",
+    "formidable": "3.5.1",
+    "tesseract.js": "5.0.4"
   }
 }
